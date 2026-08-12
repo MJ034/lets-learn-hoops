@@ -3,9 +3,15 @@ import { pool } from './database/pool.js';
 import cookieParser from 'cookie-parser';
 import authRouter from './modules/auth/auth.routes.js';
 import learningRoutes from './modules/learning/learning.routes.js';
+import cors from 'cors';
 
 const app = express();
 const port = Number(process.env.PORT ?? 3000);
+
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true,
+}));
 
 app.use(express.json());
 app.use(cookieParser());
