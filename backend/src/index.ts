@@ -2,6 +2,7 @@ import express from 'express';
 import { pool } from './database/pool.js';
 import cookieParser from 'cookie-parser';
 import authRouter from './modules/auth/auth.routes.js';
+import learningRoutes from './modules/learning/learning.routes.js';
 
 const app = express();
 const port = Number(process.env.PORT ?? 3000);
@@ -10,6 +11,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use('/api/auth', authRouter);
+app.use('/api/learning-modules', learningRoutes);
 
 app.get('/health', async (_req, res) => {
   try {
