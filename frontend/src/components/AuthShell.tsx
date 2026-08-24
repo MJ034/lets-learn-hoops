@@ -16,7 +16,7 @@ export default function AuthShell({
   children,
 }: AuthShellProps) {
   return (
-    <main className="login-page">
+    <section className="login-page">
       <h1 className="login-title">{title}</h1>
 
       <form className="login-form" onSubmit={onSubmit} noValidate>
@@ -30,6 +30,6 @@ export default function AuthShell({
 
         {footer}
       </form>
-    </main>
+    </section>
   );
 }
