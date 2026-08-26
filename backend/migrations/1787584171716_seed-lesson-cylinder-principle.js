@@ -14,7 +14,7 @@ export const up = (pgm) => {
     VALUES (
       'The Cylinder Principle',
       'the-cylinder-principle',
-      (SELECT id FROM categories WHERE slug = 'rules-and-violations'),
+      (SELECT id FROM categories WHERE slug = 'fouls'),
       $content$
 # The Cylinder Principle
 

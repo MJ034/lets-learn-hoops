@@ -14,7 +14,7 @@ export const up = (pgm) => {
     VALUES (
       'What is a Foul?',
       'what-is-a-foul',
-      (SELECT id FROM categories WHERE slug = 'rules-and-violations'),
+      (SELECT id FROM categories WHERE slug = 'fouls'),
       $content$
 # What is a Foul?
 
