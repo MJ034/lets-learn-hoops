@@ -3,6 +3,8 @@ import { pool } from './database/pool.js';
 import cookieParser from 'cookie-parser';
 import authRouter from './modules/auth/auth.routes.js';
 import learningRoutes from './modules/learning/learning.routes.js';
+import quizzesRouter from './modules/quizzes/quizzes.routes.js';
+import progressRouter from './modules/progress/progress.routes.js';
 import cors from 'cors';
 
 const app = express();
@@ -18,6 +20,8 @@ app.use(cookieParser());
 
 app.use('/api/auth', authRouter);
 app.use('/api/learning-modules', learningRoutes);
+app.use('/api/quizzes', quizzesRouter);
+app.use('/api/progress', progressRouter);
 
 app.get('/health', async (_req, res) => {
   try {
