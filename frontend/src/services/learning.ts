@@ -1,6 +1,7 @@
 import type { LearningModuleDetail, LearningModuleResponse, LearningModulesResponse } from '../types/learning';
+import { apiPath } from '../config/api';
 
-const BASE_URL = '/api/learning-modules';
+const BASE_URL = apiPath('/learning-modules');
 
 export async function getLearningModules(category?: string): Promise<LearningModulesResponse> {
   const params = new URLSearchParams();

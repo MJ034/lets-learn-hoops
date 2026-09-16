@@ -34,6 +34,7 @@ export default function Nav() {
         <div className="site-links">
           <NavLink to="/">Home</NavLink>
           <NavLink to="/learn">Learn</NavLink>
+          {status === "authenticated" && user ? <NavLink to="/progress">Progress</NavLink> : null}
         </div>
 
         <div className="nav-auth" aria-live="polite">

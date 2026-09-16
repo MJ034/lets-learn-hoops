@@ -6,14 +6,32 @@ import learningRoutes from './modules/learning/learning.routes.js';
 import quizzesRouter from './modules/quizzes/quizzes.routes.js';
 import progressRouter from './modules/progress/progress.routes.js';
 import cors from 'cors';
+import type { CorsOptions } from 'cors';
 
 const app = express();
 const port = Number(process.env.PORT ?? 3000);
+const corsOrigins = (process.env.CORS_ORIGINS ?? '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
-app.use(cors({
-  origin: 'http://localhost:5173',
+if (process.env.NODE_ENV === 'production' && corsOrigins.length === 0) {
+  throw new Error('CORS_ORIGINS must be set in production');
+}
+
+const corsOptions: CorsOptions = {
+  origin(origin, callback) {
+    if (!origin || corsOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(null, false);
+  },
   credentials: true,
-}));
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(cookieParser());
@@ -34,5 +52,5 @@ app.get('/health', async (_req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Backend listening in dev mode on http://localhost:${port}`);
+  console.log(`Backend listening on port ${port}`);
 });

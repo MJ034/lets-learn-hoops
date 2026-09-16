@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { pool } from '../../database/pool.js';
-import { getQuizByModuleSlug, submitQuiz } from './quizzes.controller.js';
+import { getQuizByModuleSlug, reviewQuiz, submitQuiz } from './quizzes.controller.js';
 
 function createMockRes() {
     return {
@@ -221,6 +221,60 @@ describe('quizzes controller', () => {
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.json).toHaveBeenCalledWith({
             message: 'answers must be an array of { questionId, selectedAnswer }',
+        });
+    });
+
+    it('reviews quiz answers without storing a result', async () => {
+        vi.spyOn(pool, 'query').mockResolvedValue({
+            rowCount: 2,
+            rows: [
+                { id: 'question-1', correct_answer: 'A' },
+                { id: 'question-2', correct_answer: 'B' },
+            ],
+        } as any);
+
+        const req = {
+            params: {
+                quizId: 'quiz-1',
+            },
+            body: {
+                answers: [
+                    { questionId: 'question-1', selectedAnswer: 'A' },
+                    { questionId: 'question-2', selectedAnswer: 'wrong' },
+                ],
+            },
+        } as any;
+
+        const res = createMockRes() as any;
+
+        await reviewQuiz(req, res);
+
+        expect(pool.query).not.toHaveBeenCalledWith(
+            expect.stringContaining('INSERT INTO quiz_results'),
+            expect.any(Array)
+        );
+        expect(res.json).toHaveBeenCalledWith({
+            result: {
+                id: null,
+                quizId: 'quiz-1',
+                score: 1,
+                totalQuestions: 2,
+                completedAt: null,
+                answers: [
+                    {
+                        questionId: 'question-1',
+                        selectedAnswer: 'A',
+                        correctAnswer: 'A',
+                        isCorrect: true,
+                    },
+                    {
+                        questionId: 'question-2',
+                        selectedAnswer: 'wrong',
+                        correctAnswer: 'B',
+                        isCorrect: false,
+                    },
+                ],
+            },
         });
     });
 

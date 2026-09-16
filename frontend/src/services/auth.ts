@@ -1,6 +1,7 @@
 import type { LoginPayload, RegisterPayload, AuthResponse } from '../types/auth';
+import { apiPath } from '../config/api';
 
-const BASE_URL = '/api/auth';
+const BASE_URL = apiPath('/auth');
 
 export async function getMe(): Promise<AuthResponse> {
   const res = await fetch(`${BASE_URL}/me`, { credentials: 'include' });

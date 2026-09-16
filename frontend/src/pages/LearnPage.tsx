@@ -12,6 +12,24 @@ const categories = [
   { label: "Skills Development", slug: "skills-development" },
 ];
 
+const learningPaths = [
+  {
+    title: "Start here",
+    description: "New to basketball? Begin with the basics, court layout, and the flow of play.",
+    categorySlug: "basketball-basics",
+  },
+  {
+    title: "Understand whistles",
+    description: "Learn the calls that stop play most often: violations, fouls, and penalties.",
+    categorySlug: "rules-and-violations",
+  },
+  {
+    title: "Read team shape",
+    description: "Explore positions, spacing, offense, and defense so games become easier to follow.",
+    categorySlug: "positions",
+  },
+];
+
 export default function LearnPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const category = searchParams.get("category") ?? undefined;
@@ -28,6 +46,18 @@ export default function LearnPage() {
       <p className="home-intro">
         Browse short lessons by topic, then open a lesson for the full walkthrough.
       </p>
+      <section className="learning-paths" aria-label="Suggested learning paths">
+        {learningPaths.map((path) => (
+          <button
+            key={path.title}
+            type="button"
+            onClick={() => selectCategory(path.categorySlug)}
+          >
+            <span>{path.title}</span>
+            {path.description}
+          </button>
+        ))}
+      </section>
       <div className="category-filter" aria-label="Filter lessons by category">
         <button
           className={!category ? "active" : undefined}

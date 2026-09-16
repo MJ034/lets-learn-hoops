@@ -6,6 +6,11 @@ type SubmittedAnswer = {
   selectedAnswer: string;
 };
 
+type QuizQuestionAnswer = {
+  id: string;
+  correct_answer: string;
+};
+
 function parseSubmittedAnswers(body: unknown): SubmittedAnswer[] | null {
   if (!body || typeof body !== 'object' || !('answers' in body)) {
     return null;
@@ -38,6 +43,51 @@ function parseSubmittedAnswers(body: unknown): SubmittedAnswer[] | null {
   }
 
   return answers as SubmittedAnswer[];
+}
+
+async function getScoredQuizReview(quizId: string, answers: SubmittedAnswer[]) {
+  const questionsResult = await pool.query<QuizQuestionAnswer>(
+    `
+    SELECT id, correct_answer
+    FROM quiz_questions
+    WHERE quiz_id = $1
+    ORDER BY created_at, id
+    `,
+    [quizId]
+  );
+
+  if (!questionsResult.rowCount) {
+    return null;
+  }
+
+  const submittedByQuestionId = new Map(
+    answers.map((answer) => [answer.questionId, answer.selectedAnswer])
+  );
+  const quizQuestionIds = new Set(questionsResult.rows.map((question) => question.id));
+
+  const hasAnswersForOtherQuiz = answers.some(
+    (answer) => !quizQuestionIds.has(answer.questionId)
+  );
+
+  if (hasAnswersForOtherQuiz) {
+    return 'INVALID_QUESTION_IDS' as const;
+  }
+
+  const review = questionsResult.rows.map((question) => {
+    const selectedAnswer = submittedByQuestionId.get(question.id) ?? null;
+
+    return {
+      questionId: question.id,
+      selectedAnswer,
+      correctAnswer: question.correct_answer,
+      isCorrect: selectedAnswer === question.correct_answer,
+    };
+  });
+
+  const score = review.filter((answer) => answer.isCorrect).length;
+  const totalQuestions = questionsResult.rows.length;
+
+  return { review, score, totalQuestions };
 }
 
 export async function getQuizByModuleSlug(req: Request, res: Response) {
@@ -101,48 +151,17 @@ export async function submitQuiz(req: Request, res: Response) {
       return res.status(401).json({ message: 'unauthorized' });
     }
 
-    const questionsResult = await pool.query(
-      `
-      SELECT id, correct_answer
-      FROM quiz_questions
-      WHERE quiz_id = $1
-      ORDER BY created_at, id
-      `,
-      [quizId]
-    );
+    const scoredReview = await getScoredQuizReview(quizId, answers);
 
-    if (!questionsResult.rowCount) {
+    if (!scoredReview) {
       return res.status(404).json({ message: 'Quiz not found' });
     }
 
-    const submittedByQuestionId = new Map(
-      answers.map((answer) => [answer.questionId, answer.selectedAnswer])
-    );
-    const quizQuestionIds = new Set(questionsResult.rows.map((question) => question.id));
-
-    const hasAnswersForOtherQuiz = answers.some(
-      (answer) => !quizQuestionIds.has(answer.questionId)
-    );
-
-    if (hasAnswersForOtherQuiz) {
+    if (scoredReview === 'INVALID_QUESTION_IDS') {
       return res.status(400).json({
         message: 'answers contains questionId values that do not belong to this quiz',
       });
     }
-
-    const review = questionsResult.rows.map((question) => {
-      const selectedAnswer = submittedByQuestionId.get(question.id) ?? null;
-
-      return {
-        questionId: question.id,
-        selectedAnswer,
-        correctAnswer: question.correct_answer,
-        isCorrect: selectedAnswer === question.correct_answer,
-      };
-    });
-
-    const score = review.filter((answer) => answer.isCorrect).length;
-    const totalQuestions = questionsResult.rows.length;
 
     const insertResult = await pool.query(
       `
@@ -150,21 +169,60 @@ export async function submitQuiz(req: Request, res: Response) {
       VALUES ($1, $2, $3, $4)
       RETURNING id, completed_at
       `,
-      [req.user.id, quizId, score, totalQuestions]
+      [req.user.id, quizId, scoredReview.score, scoredReview.totalQuestions]
     );
 
     res.status(201).json({
       result: {
         id: insertResult.rows[0].id,
         quizId,
-        score,
-        totalQuestions,
+        score: scoredReview.score,
+        totalQuestions: scoredReview.totalQuestions,
         completedAt: insertResult.rows[0].completed_at,
-        answers: review,
+        answers: scoredReview.review,
       },
     });
   } catch (err) {
     console.error('Error submitting quiz:', err);
     res.status(500).json({ message: 'Failed to submit quiz' });
+  }
+}
+
+export async function reviewQuiz(req: Request, res: Response) {
+  try {
+    const { quizId } = req.params;
+    const answers = parseSubmittedAnswers(req.body);
+
+    if (!answers) {
+      return res.status(400).json({
+        message: 'answers must be an array of { questionId, selectedAnswer }',
+      });
+    }
+
+    const scoredReview = await getScoredQuizReview(quizId, answers);
+
+    if (!scoredReview) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+
+    if (scoredReview === 'INVALID_QUESTION_IDS') {
+      return res.status(400).json({
+        message: 'answers contains questionId values that do not belong to this quiz',
+      });
+    }
+
+    res.json({
+      result: {
+        id: null,
+        quizId,
+        score: scoredReview.score,
+        totalQuestions: scoredReview.totalQuestions,
+        completedAt: null,
+        answers: scoredReview.review,
+      },
+    });
+  } catch (err) {
+    console.error('Error reviewing quiz:', err);
+    res.status(500).json({ message: 'Failed to review quiz' });
   }
 }
