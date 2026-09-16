@@ -55,21 +55,6 @@ backend/                  Express API
 	migrations/             Database schema and seed content
 ```
 
-## API Overview
-
-- `POST /api/auth/register` - create a user account.
-- `POST /api/auth/login` - log in and start a cookie-backed session.
-- `POST /api/auth/logout` - end the current session.
-- `GET /api/auth/me` - return the authenticated user.
-- `GET /api/learning-modules` - list lessons, optionally filtered by category.
-- `GET /api/learning-modules/:slug` - fetch a lesson by slug.
-- `GET /api/quizzes/module/:moduleSlug` - fetch a quiz for a lesson.
-- `POST /api/quizzes/:quizId/review` - check quiz answers without saving a result.
-- `POST /api/quizzes/:quizId/submit` - submit and save an authenticated quiz result.
-- `POST /api/progress/module/:moduleId` - mark a lesson complete.
-- `GET /api/progress/summary` - fetch completion stats and quiz history.
-- `GET /health` - check API and database connectivity.
-
 ## Getting Started
 
 ### Prerequisites
@@ -170,20 +155,3 @@ npm run dev
 npm run build
 npm run lint
 ```
-
-## Production Notes
-
-- Same-origin deploy or reverse proxy: use `VITE_API_URL=/api` and route `/api` to the backend.
-- Split frontend/API deploy: use `VITE_API_URL=https://your-api-domain.com/api`.
-- Set `CORS_ORIGINS` to the deployed frontend origin, for example `https://your-frontend-domain.com`.
-- Set `SESSION_COOKIE_SECURE=true` in production.
-- Use `SESSION_COOKIE_SAME_SITE=lax` for same-site frontend/API domains. Use `none` only for truly cross-site cookies, and only with secure HTTPS cookies.
-- Leave `SESSION_COOKIE_DOMAIN` blank unless a shared parent domain is required.
-
-## What This Project Demonstrates
-
-- Building a full-stack TypeScript application with separated frontend and backend concerns.
-- Designing REST API modules around auth, learning content, quizzes, and user progress.
-- Managing relational data with PostgreSQL migrations and seeded educational content.
-- Handling session-based authentication and protected routes across the client and server.
-- Creating a user journey that supports both guest exploration and authenticated progress tracking.
